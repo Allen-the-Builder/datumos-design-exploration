@@ -174,17 +174,8 @@ function PlatformCard({ platform, position, index, isExiting }: PlatformCardProp
 }
 
 export function LivingKnowledgeGraph({ isExiting = false, isEntering = false }: LivingKnowledgeGraphProps) {
-  const [rotation, setRotation] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRotation((prev) => (prev + 0.2) % 360);
-    }, 50);
-    return () => clearInterval(interval);
-  }, []);
-
   const getNodePosition = (angle: number, radius: number) => {
-    const angleInRadians = ((angle + rotation) * Math.PI) / 180;
+    const angleInRadians = (angle * Math.PI) / 180;
     return {
       x: Math.cos(angleInRadians) * radius,
       y: Math.sin(angleInRadians) * radius,
@@ -210,41 +201,48 @@ export function LivingKnowledgeGraph({ isExiting = false, isEntering = false }: 
           }}
         >
           <div className="relative w-36 h-36">
-            {/* Animated outer rings */}
+            {/* Pulsing rings that emanate from hub in bursts */}
             <div
-              className="absolute inset-0 rounded-full border-2 border-gray-300"
+              className="absolute inset-0 rounded-full border border-gray-400"
               style={{
-                transform: `scale(${1 + Math.sin(rotation * 0.05) * 0.1})`,
-                opacity: 0.4,
-                transition: "transform 0.3s ease-out",
+                animation: "ripple 5s ease-out infinite",
+                animationDelay: "0s",
               }}
             />
             <div
-              className="absolute inset-2 rounded-full border-2 border-gray-300"
+              className="absolute inset-0 rounded-full border border-gray-400"
               style={{
-                transform: `scale(${1 + Math.cos(rotation * 0.05) * 0.1})`,
-                opacity: 0.3,
-                transition: "transform 0.3s ease-out",
+                animation: "ripple 5s ease-out infinite",
+                animationDelay: "0.15s",
+              }}
+            />
+            <div
+              className="absolute inset-0 rounded-full border border-blue-400"
+              style={{
+                animation: "ripple 5s ease-out infinite",
+                animationDelay: "0.3s",
+              }}
+            />
+
+            {/* Rainbow gradient drop shadow with additive glow */}
+            <div
+              className="absolute inset-5 rounded-full"
+              style={{
+                background: 'linear-gradient(135deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0080ff, #8000ff)',
+                filter: 'blur(12px)',
+                opacity: 0.8,
+                transform: 'translateY(8px)',
+                mixBlendMode: 'screen',
               }}
             />
 
             {/* Inner circle */}
-            <div className="absolute inset-5 rounded-full bg-gradient-to-br from-gray-50 to-gray-100 border-3 border-gray-300 flex items-center justify-center shadow-xl">
+            <div className="absolute inset-5 rounded-full bg-gradient-to-br from-gray-50 to-gray-100 border-3 border-gray-300 flex items-center justify-center shadow-lg">
               <div className="text-center">
                 <div className="text-sm font-bold text-gray-700 tracking-tight">DatumOS</div>
                 <div className="text-xs font-mono text-gray-500 mt-1">Knowledge Hub</div>
               </div>
             </div>
-
-            {/* Connection pulse effect */}
-            <div
-              className="absolute inset-0 rounded-full border-2 border-blue-400"
-              style={{
-                opacity: 0.3 + Math.sin(rotation * 0.1) * 0.2,
-                transform: `scale(${1.5 + Math.sin(rotation * 0.1) * 0.2})`,
-                transition: "all 0.3s ease-out",
-              }}
-            />
           </div>
         </div>
 
@@ -277,13 +275,19 @@ export function LivingKnowledgeGraph({ isExiting = false, isEntering = false }: 
             </filter>
           </defs>
 
-          {platforms.map((platform) => {
+          {platforms.map((platform, index) => {
             const pos = getNodePosition(platform.angle, 270);
             const centerX = 450;
             const centerY = 325;
 
+            // Stable random-like duration based on index (4-7 seconds)
+            const duration = 4 + (index * 0.7) % 3;
+            // Stable random-like delay based on index (0-5 seconds)
+            const delay = (index * 1.3) % 5;
+
             return (
               <g key={`edge-${platform.id}`}>
+                {/* Static connection line */}
                 <line
                   x1={centerX}
                   y1={centerY}
@@ -295,6 +299,39 @@ export function LivingKnowledgeGraph({ isExiting = false, isEntering = false }: 
                   opacity={0.6}
                   markerEnd="url(#arrowhead)"
                 />
+
+                {/* Hidden path for animation */}
+                <path
+                  id={`path-${platform.id}`}
+                  d={`M ${centerX + pos.x} ${centerY + pos.y} L ${centerX} ${centerY}`}
+                  fill="none"
+                  stroke="none"
+                />
+
+                {/* Animated data flow arrowhead */}
+                <g opacity="0.8">
+                  <polygon
+                    points="0,-4 8,0 0,4"
+                    fill="#3b82f6"
+                  >
+                    <animateMotion
+                      dur={`${duration.toFixed(1)}s`}
+                      repeatCount="indefinite"
+                      begin={`${delay.toFixed(1)}s`}
+                      rotate="auto"
+                    >
+                      <mpath href={`#path-${platform.id}`} />
+                    </animateMotion>
+                    <animate
+                      attributeName="opacity"
+                      values="0;1;1;0"
+                      keyTimes="0;0.1;0.9;1"
+                      dur={`${duration.toFixed(1)}s`}
+                      repeatCount="indefinite"
+                      begin={`${delay.toFixed(1)}s`}
+                    />
+                  </polygon>
+                </g>
               </g>
             );
           })}
@@ -352,6 +389,21 @@ export function LivingKnowledgeGraph({ isExiting = false, isEntering = false }: 
           100% {
             opacity: 1;
             transform: scale(1);
+          }
+        }
+
+        @keyframes ripple {
+          0% {
+            opacity: 0;
+            transform: scale(0.7);
+          }
+          5% {
+            opacity: 0.6;
+            transform: scale(0.8);
+          }
+          100% {
+            opacity: 0;
+            transform: scale(2.5);
           }
         }
       `}</style>

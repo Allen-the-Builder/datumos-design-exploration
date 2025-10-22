@@ -63,11 +63,15 @@ export const FileNode = memo(({ data }: NodeProps<FileNodeData>) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <Handle type="target" position={Position.Top} className="!bg-gray-400 !w-2 !h-2 !opacity-0" />
+      {/* Target handles - edges can connect TO this node */}
+      <Handle type="target" position={Position.Top} id="top" className="!bg-gray-400 !w-2 !h-2 !opacity-0" />
+      <Handle type="target" position={Position.Right} id="right" className="!bg-gray-400 !w-2 !h-2 !opacity-0" />
+      <Handle type="target" position={Position.Bottom} id="bottom" className="!bg-gray-400 !w-2 !h-2 !opacity-0" />
+      <Handle type="target" position={Position.Left} id="left" className="!bg-gray-400 !w-2 !h-2 !opacity-0" />
 
       <div
-        className="bg-white rounded-lg shadow-lg border-2 transition-all hover:shadow-xl hover:scale-105 cursor-pointer"
-        style={{ borderColor: color, width: "200px" }}
+        className="bg-white rounded-lg shadow-lg border-2 transition-all hover:shadow-xl hover:scale-105 cursor-pointer overflow-hidden"
+        style={{ borderColor: "#6b7280", width: "200px" }}
       >
         {/* Header with file icon */}
         <div className="p-3 flex items-start gap-3">
@@ -85,7 +89,7 @@ export const FileNode = memo(({ data }: NodeProps<FileNodeData>) => {
         {/* Footer with platform badge and relevance score */}
         <div
           className="px-3 py-2 border-t flex items-center justify-between"
-          style={{ borderColor: `${color}30`, backgroundColor: `${color}08` }}
+          style={{ borderColor: "#e5e7eb", backgroundColor: "#f9fafb" }}
         >
           <span
             className="text-xs font-mono px-2 py-0.5 rounded font-semibold"
@@ -134,7 +138,11 @@ export const FileNode = memo(({ data }: NodeProps<FileNodeData>) => {
         </div>
       )}
 
-      <Handle type="source" position={Position.Bottom} className="!bg-gray-400 !w-2 !h-2 !opacity-0" />
+      {/* Source handles - edges can connect FROM this node */}
+      <Handle type="source" position={Position.Top} id="top" className="!bg-gray-400 !w-2 !h-2 !opacity-0" />
+      <Handle type="source" position={Position.Right} id="right" className="!bg-gray-400 !w-2 !h-2 !opacity-0" />
+      <Handle type="source" position={Position.Bottom} id="bottom" className="!bg-gray-400 !w-2 !h-2 !opacity-0" />
+      <Handle type="source" position={Position.Left} id="left" className="!bg-gray-400 !w-2 !h-2 !opacity-0" />
 
       {/* Animations */}
       <style jsx>{`

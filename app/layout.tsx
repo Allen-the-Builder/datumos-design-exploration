@@ -4,6 +4,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "DatumOS - Operations Intelligence Platform",
   description: "The world's first Operations Intelligence platform for AEC",
+  icons: {
+    icon: "/Datum_LogoMark_b.png",
+    apple: "/Datum_LogoMark_b.png",
+  },
 };
 
 export default function RootLayout({

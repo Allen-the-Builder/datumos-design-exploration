@@ -10,12 +10,14 @@ import ReactFlow, {
   useEdgesState,
   MarkerType,
   NodeTypes,
+  EdgeTypes,
   useReactFlow,
   ReactFlowProvider,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { AggregationNode } from "./nodes/aggregation-node";
 import { FileNode } from "./nodes/file-node";
+import { SimpleFloatingEdge } from "./edges/simple-floating-edge";
 import { Folder, FileText, Users, AlertCircle, Layers } from "lucide-react";
 
 interface KnowledgeGraphProps {
@@ -44,7 +46,7 @@ const categoryDefinitions: CategoryData[] = [
   {
     id: "projects",
     label: "Projects",
-    color: "#3b82f6",
+    color: "#6b7280",
     icon: <Folder className="w-5 h-5" />,
     files: [
       {
@@ -80,7 +82,7 @@ const categoryDefinitions: CategoryData[] = [
   {
     id: "documents",
     label: "Documents",
-    color: "#8b5cf6",
+    color: "#6b7280",
     icon: <FileText className="w-5 h-5" />,
     files: [
       {
@@ -123,7 +125,7 @@ const categoryDefinitions: CategoryData[] = [
   {
     id: "drawings",
     label: "Drawings",
-    color: "#ec4899",
+    color: "#6b7280",
     icon: <Layers className="w-5 h-5" />,
     files: [
       {
@@ -152,7 +154,7 @@ const categoryDefinitions: CategoryData[] = [
   {
     id: "rfis",
     label: "RFIs",
-    color: "#f59e0b",
+    color: "#6b7280",
     icon: <AlertCircle className="w-5 h-5" />,
     files: [
       {
@@ -181,7 +183,7 @@ const categoryDefinitions: CategoryData[] = [
   {
     id: "teams",
     label: "Teams",
-    color: "#10b981",
+    color: "#6b7280",
     icon: <Users className="w-5 h-5" />,
     files: [
       {
@@ -213,6 +215,11 @@ const categoryDefinitions: CategoryData[] = [
 const nodeTypes: NodeTypes = {
   aggregation: AggregationNode,
   file: FileNode,
+};
+
+// Define custom edge types
+const edgeTypes: EdgeTypes = {
+  floating: SimpleFloatingEdge,
 };
 
 // Layout constants
@@ -260,29 +267,64 @@ const calculateRelevanceScore = (fileName: string, query: string): number => {
   return Math.round(fuzzyScore);
 };
 
+// Determine max results based on query length
+const getMaxResults = (queryLength: number): number => {
+  if (queryLength === 0) return 100; // Show all when no query
+  if (queryLength <= 2) return 8;
+  if (queryLength <= 4) return 5;
+  return 3;
+};
+
+// Determine minimum relevance threshold based on query length
+const getMinRelevanceThreshold = (queryLength: number): number => {
+  if (queryLength === 0) return 0;    // No threshold when no query
+  if (queryLength <= 2) return 40;    // 40% minimum for short queries
+  if (queryLength <= 4) return 50;    // 50% minimum for medium queries
+  return 60;                          // 60% minimum for longer queries
+};
+
 const generateGraphData = (query: string, expandedCategories: Set<string>) => {
   const queryLower = query.toLowerCase();
   const hasQuery = query.length > 0;
 
-  // Calculate relevance scores for all files and filter categories with matches
+  // Calculate relevance scores for all files
   const categoriesWithScores = categoryDefinitions.map(cat => {
     const filesWithScores = cat.files.map(file => ({
       ...file,
-      relevanceScore: calculateRelevanceScore(file.fileName, query)
-    })).filter(file => !hasQuery || file.relevanceScore > 0) // Only show files with relevance if there's a query
-      .sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0)); // Sort by relevance
+      relevanceScore: calculateRelevanceScore(file.fileName, query),
+      categoryId: cat.id,
+      categoryColor: cat.color,
+      categoryIcon: cat.icon,
+      categoryLabel: cat.label
+    }));
+    return { ...cat, files: filesWithScores };
+  });
 
+  // Get filtering parameters
+  const maxResults = getMaxResults(query.length);
+  const minThreshold = getMinRelevanceThreshold(query.length);
+
+  // Flatten all files, filter by threshold, sort by relevance, and take top N
+  const allFiles = categoriesWithScores
+    .flatMap(cat => cat.files)
+    .filter(file => !hasQuery || (file.relevanceScore > 0 && file.relevanceScore >= minThreshold))  // Apply threshold
+    .sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0))
+    .slice(0, maxResults);
+
+  // Group filtered files back into categories
+  const categoriesWithFilteredFiles = categoryDefinitions.map(cat => {
+    const filteredFiles = allFiles.filter(file => file.categoryId === cat.id);
     return {
       ...cat,
-      files: filesWithScores,
-      hasMatches: filesWithScores.length > 0
+      files: filteredFiles,
+      hasMatches: filteredFiles.length > 0
     };
-  }).filter(cat => cat.hasMatches); // Only show categories with matching files
+  }).filter(cat => cat.hasMatches);
 
   // Auto-expand categories with matches (unless manually collapsed)
   const autoExpandedCategories = new Set(expandedCategories);
   if (hasQuery) {
-    categoriesWithScores.forEach(cat => {
+    categoriesWithFilteredFiles.forEach(cat => {
       if (cat.hasMatches && !expandedCategories.has(`collapsed-${cat.id}`)) {
         autoExpandedCategories.add(cat.id);
       }
@@ -293,7 +335,7 @@ const generateGraphData = (query: string, expandedCategories: Set<string>) => {
   const edges: Edge[] = [];
 
   // Calculate total width needed for categories
-  const totalCategoriesWidth = categoriesWithScores.length * HORIZONTAL_SPACING;
+  const totalCategoriesWidth = categoriesWithFilteredFiles.length * HORIZONTAL_SPACING;
   const startX = -totalCategoriesWidth / 2;
 
   // Search node (root) - centered at top
@@ -306,19 +348,19 @@ const generateGraphData = (query: string, expandedCategories: Set<string>) => {
     data: { label: query || "Search Query" },
     position: { x: searchX - SEARCH_NODE_WIDTH / 2, y: searchY },
     style: {
-      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      background: "linear-gradient(135deg, #374151 0%, #1f2937 100%)",
       color: "white",
       border: "none",
       borderRadius: "8px",
       fontSize: "13px",
       fontWeight: "600",
       padding: "12px 20px",
-      boxShadow: "0 4px 12px rgba(102, 126, 234, 0.4)",
+      boxShadow: "0 4px 12px rgba(107, 116, 128, 0.4)",
     },
   });
 
   // Add category nodes in a horizontal row
-  categoriesWithScores.forEach((cat, idx) => {
+  categoriesWithFilteredFiles.forEach((cat, idx) => {
     const isExpanded = autoExpandedCategories.has(cat.id);
     const categoryX = startX + idx * HORIZONTAL_SPACING;
     const categoryY = searchY + VERTICAL_SPACING_CATEGORIES;
@@ -343,11 +385,12 @@ const generateGraphData = (query: string, expandedCategories: Set<string>) => {
       id: `search-${cat.id}`,
       source: "search",
       target: cat.id,
+      type: "floating",
       animated: !isExpanded,
-      style: { stroke: cat.color, strokeWidth: 2 },
+      style: { stroke: "#6b7280", strokeWidth: 2 },
       markerEnd: {
         type: MarkerType.ArrowClosed,
-        color: cat.color,
+        color: "#6b7280",
       },
     });
 
@@ -380,10 +423,11 @@ const generateGraphData = (query: string, expandedCategories: Set<string>) => {
           id: `${cat.id}-${file.id}`,
           source: cat.id,
           target: file.id,
-          style: { stroke: cat.color, strokeWidth: 1.5, strokeDasharray: "5,5" },
+          type: "floating",
+          style: { stroke: "#6b7280", strokeWidth: 1.5, strokeDasharray: "5,5" },
           markerEnd: {
             type: MarkerType.ArrowClosed,
-            color: cat.color,
+            color: "#6b7280",
             width: 15,
             height: 15,
           },
@@ -465,12 +509,12 @@ function KnowledgeGraphInner({ searchQuery }: KnowledgeGraphProps) {
     // Trigger fitView after nodes are updated to auto-adjust view
     setTimeout(() => {
       fitView({
-        padding: 0.15,
+        padding: 0.3,      // Increased padding for better vertical spacing
         duration: 400,
-        maxZoom: 0.9,
+        maxZoom: 1.0,      // Slightly higher max zoom
         minZoom: 0.1
       });
-    }, 50);
+    }, 100);              // Slightly longer delay to ensure layout is ready
   }, [graphData, setNodes, setEdges, fitView]);
 
   return (
@@ -481,8 +525,9 @@ function KnowledgeGraphInner({ searchQuery }: KnowledgeGraphProps) {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         fitView
-        fitViewOptions={{ padding: 0.15, maxZoom: 0.9, minZoom: 0.1 }}
+        fitViewOptions={{ padding: 0.3, maxZoom: 1.0, minZoom: 0.1 }}
         minZoom={0.1}
         maxZoom={2}
         className="bg-transparent"
