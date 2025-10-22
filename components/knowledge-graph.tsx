@@ -31,8 +31,8 @@ interface CategoryData {
 
 interface FileData {
   id: string;
-  label: string;
-  type: string;
+  fileName: string;
+  fileExtension: string;
   platform: string;
 }
 
@@ -41,58 +41,58 @@ const categoryDefinitions: CategoryData[] = [
     id: "projects",
     label: "Projects",
     color: "#3b82f6",
-    icon: <Folder className="w-4 h-4" />,
+    icon: <Folder className="w-5 h-5" />,
     files: [
-      { id: "proj-1", label: "Downtown Tower Construction", type: "Project", platform: "ACC" },
-      { id: "proj-2", label: "Harbor Bridge Renovation", type: "Project", platform: "ACC" },
-      { id: "proj-3", label: "Medical Center Expansion", type: "Project", platform: "ACC" },
-      { id: "proj-4", label: "Transit Hub Development", type: "Project", platform: "ACC" },
+      { id: "proj-1", fileName: "Downtown_Tower_Construction", fileExtension: "mpp", platform: "ACC" },
+      { id: "proj-2", fileName: "Harbor_Bridge_Renovation", fileExtension: "mpp", platform: "ACC" },
+      { id: "proj-3", fileName: "Medical_Center_Expansion", fileExtension: "mpp", platform: "ACC" },
+      { id: "proj-4", fileName: "Transit_Hub_Development", fileExtension: "mpp", platform: "ACC" },
     ],
   },
   {
     id: "documents",
     label: "Documents",
     color: "#8b5cf6",
-    icon: <FileText className="w-4 h-4" />,
+    icon: <FileText className="w-5 h-5" />,
     files: [
-      { id: "doc-1", label: "Project Specifications v3.2", type: "Document", platform: "M365" },
-      { id: "doc-2", label: "Safety Compliance Report", type: "Document", platform: "M365" },
-      { id: "doc-3", label: "Meeting Notes - Week 12", type: "Document", platform: "M365" },
-      { id: "doc-4", label: "Budget Analysis Q4", type: "Document", platform: "ACC" },
-      { id: "doc-5", label: "Contract Amendment 2024", type: "Document", platform: "M365" },
+      { id: "doc-1", fileName: "Project_Specifications_v3.2", fileExtension: "docx", platform: "M365" },
+      { id: "doc-2", fileName: "Safety_Compliance_Report", fileExtension: "pdf", platform: "M365" },
+      { id: "doc-3", fileName: "Meeting_Notes_Week_12", fileExtension: "docx", platform: "M365" },
+      { id: "doc-4", fileName: "Budget_Analysis_Q4", fileExtension: "xlsx", platform: "ACC" },
+      { id: "doc-5", fileName: "Contract_Amendment_2024", fileExtension: "pdf", platform: "M365" },
     ],
   },
   {
     id: "drawings",
     label: "Drawings",
     color: "#ec4899",
-    icon: <Layers className="w-4 h-4" />,
+    icon: <Layers className="w-5 h-5" />,
     files: [
-      { id: "draw-1", label: "A-101 Site Plan", type: "Drawing", platform: "Bluebeam" },
-      { id: "draw-2", label: "S-201 Structural Detail", type: "Drawing", platform: "ACC" },
-      { id: "draw-3", label: "M-301 HVAC Layout", type: "Drawing", platform: "Bluebeam" },
+      { id: "draw-1", fileName: "A-101_Site_Plan", fileExtension: "dwg", platform: "Bluebeam" },
+      { id: "draw-2", fileName: "S-201_Structural_Detail", fileExtension: "dwg", platform: "ACC" },
+      { id: "draw-3", fileName: "M-301_HVAC_Layout", fileExtension: "dwg", platform: "Bluebeam" },
     ],
   },
   {
     id: "rfis",
     label: "RFIs",
     color: "#f59e0b",
-    icon: <AlertCircle className="w-4 h-4" />,
+    icon: <AlertCircle className="w-5 h-5" />,
     files: [
-      { id: "rfi-1", label: "RFI-024 Foundation Clarification", type: "RFI", platform: "Bluebeam" },
-      { id: "rfi-2", label: "RFI-031 Material Substitution", type: "RFI", platform: "ACC" },
-      { id: "rfi-3", label: "RFI-045 Schedule Conflict", type: "RFI", platform: "Bluebeam" },
+      { id: "rfi-1", fileName: "RFI-024_Foundation_Clarification", fileExtension: "pdf", platform: "Bluebeam" },
+      { id: "rfi-2", fileName: "RFI-031_Material_Substitution", fileExtension: "pdf", platform: "ACC" },
+      { id: "rfi-3", fileName: "RFI-045_Schedule_Conflict", fileExtension: "pdf", platform: "Bluebeam" },
     ],
   },
   {
     id: "teams",
     label: "Teams",
     color: "#10b981",
-    icon: <Users className="w-4 h-4" />,
+    icon: <Users className="w-5 h-5" />,
     files: [
-      { id: "team-1", label: "Structural Engineering Team", type: "Team", platform: "ACC" },
-      { id: "team-2", label: "MEP Coordination Group", type: "Team", platform: "ACC" },
-      { id: "team-3", label: "Site Management", type: "Team", platform: "M365" },
+      { id: "team-1", fileName: "Structural_Engineering_Team", fileExtension: "csv", platform: "ACC" },
+      { id: "team-2", fileName: "MEP_Coordination_Group", fileExtension: "csv", platform: "ACC" },
+      { id: "team-3", fileName: "Site_Management", fileExtension: "csv", platform: "M365" },
     ],
   },
 ];
@@ -103,6 +103,27 @@ const nodeTypes: NodeTypes = {
   file: FileNode,
 };
 
+// Circular layout helper function
+const calculateCircularLayout = (
+  centerX: number,
+  centerY: number,
+  radius: number,
+  itemCount: number,
+  startAngle: number = 0
+) => {
+  const positions: { x: number; y: number }[] = [];
+  const angleStep = (2 * Math.PI) / itemCount;
+
+  for (let i = 0; i < itemCount; i++) {
+    const angle = startAngle + i * angleStep;
+    const x = centerX + radius * Math.cos(angle);
+    const y = centerY + radius * Math.sin(angle);
+    positions.push({ x, y });
+  }
+
+  return positions;
+};
+
 const generateGraphData = (query: string, expandedCategories: Set<string>) => {
   const queryLower = query.toLowerCase();
 
@@ -111,34 +132,45 @@ const generateGraphData = (query: string, expandedCategories: Set<string>) => {
     (cat) => cat.label.toLowerCase().includes(queryLower) || query.length > 2
   );
 
-  const nodes: Node[] = [
-    // Search node (root)
-    {
-      id: "search",
-      type: "input",
-      data: { label: query || "Search Query" },
-      position: { x: 400, y: 50 },
-      style: {
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        color: "white",
-        border: "none",
-        borderRadius: "8px",
-        fontSize: "13px",
-        fontWeight: "600",
-        padding: "12px 20px",
-        boxShadow: "0 4px 12px rgba(102, 126, 234, 0.4)",
-      },
-    },
-  ];
-
+  const nodes: Node[] = [];
   const edges: Edge[] = [];
+
+  // Center position for the search node
+  const centerX = 600;
+  const centerY = 400;
+
+  // Search node (root) - centered
+  nodes.push({
+    id: "search",
+    type: "input",
+    data: { label: query || "Search Query" },
+    position: { x: centerX - 60, y: centerY - 200 },
+    style: {
+      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      color: "white",
+      border: "none",
+      borderRadius: "8px",
+      fontSize: "13px",
+      fontWeight: "600",
+      padding: "12px 20px",
+      boxShadow: "0 4px 12px rgba(102, 126, 234, 0.4)",
+    },
+  });
+
+  // Calculate positions for category nodes in a circle around the search node
+  const categoryRadius = 350;
+  const categoryPositions = calculateCircularLayout(
+    centerX,
+    centerY,
+    categoryRadius,
+    relevantCategories.length,
+    -Math.PI / 2 // Start at top
+  );
 
   // Add category nodes and their children
   relevantCategories.forEach((cat, idx) => {
     const isExpanded = expandedCategories.has(cat.id);
-    const xOffset = idx * 220;
-    const categoryX = 100 + xOffset;
-    const categoryY = 200;
+    const categoryPos = categoryPositions[idx];
 
     // Add aggregation node
     nodes.push({
@@ -152,7 +184,7 @@ const generateGraphData = (query: string, expandedCategories: Set<string>) => {
         color: cat.color,
         icon: cat.icon,
       },
-      position: { x: categoryX, y: categoryY },
+      position: { x: categoryPos.x - 60, y: categoryPos.y - 60 },
     });
 
     // Add edge from search to category
@@ -170,21 +202,31 @@ const generateGraphData = (query: string, expandedCategories: Set<string>) => {
 
     // Add file nodes if category is expanded
     if (isExpanded) {
+      // Calculate positions for file nodes in a circle around the category node
+      const fileRadius = 280;
+      const filePositions = calculateCircularLayout(
+        categoryPos.x,
+        categoryPos.y,
+        fileRadius,
+        cat.files.length,
+        (idx * 2 * Math.PI) / relevantCategories.length // Offset each category's files
+      );
+
       cat.files.forEach((file, fileIdx) => {
-        const fileY = categoryY + 180 + fileIdx * 100;
-        const fileX = categoryX + (fileIdx % 2 === 0 ? -80 : 80);
+        const filePos = filePositions[fileIdx];
 
         nodes.push({
           id: file.id,
           type: "file",
           data: {
-            label: file.label,
-            type: file.type,
+            label: file.fileName,
+            fileName: file.fileName,
+            fileExtension: file.fileExtension,
+            type: file.fileExtension.toUpperCase(),
             platform: file.platform,
             color: cat.color,
-            icon: cat.icon,
           },
-          position: { x: fileX, y: fileY },
+          position: { x: filePos.x - 100, y: filePos.y - 50 },
         });
 
         // Add edge from category to file
@@ -192,7 +234,7 @@ const generateGraphData = (query: string, expandedCategories: Set<string>) => {
           id: `${cat.id}-${file.id}`,
           source: cat.id,
           target: file.id,
-          style: { stroke: cat.color, strokeWidth: 1.5 },
+          style: { stroke: cat.color, strokeWidth: 1.5, strokeDasharray: "5,5" },
           markerEnd: {
             type: MarkerType.ArrowClosed,
             color: cat.color,
@@ -259,11 +301,14 @@ export function KnowledgeGraph({ searchQuery }: KnowledgeGraphProps) {
         onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
         fitView
-        fitViewOptions={{ padding: 0.2, maxZoom: 1 }}
+        fitViewOptions={{ padding: 0.15, maxZoom: 0.8, minZoom: 0.3 }}
         minZoom={0.1}
-        maxZoom={2}
+        maxZoom={1.5}
         className="bg-transparent"
         proOptions={{ hideAttribution: true }}
+        nodesDraggable={true}
+        nodesConnectable={false}
+        elementsSelectable={true}
       >
         <Background color="#e5e7eb" gap={24} size={1} />
         <Controls

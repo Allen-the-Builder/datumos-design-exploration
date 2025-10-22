@@ -18,57 +18,57 @@ export const AggregationNode = memo(({ data }: NodeProps<AggregationNodeData>) =
 
   return (
     <div className="relative">
-      <Handle type="target" position={Position.Top} className="!bg-gray-400 !w-2 !h-2" />
+      <Handle type="target" position={Position.Top} className="!bg-gray-400 !w-2 !h-2 !opacity-0" />
 
       <div
-        className="bg-white rounded-lg shadow-lg border-2 transition-all hover:shadow-xl cursor-pointer"
-        style={{ borderColor: color, minWidth: "200px" }}
+        className="relative flex items-center justify-center cursor-pointer transition-all hover:scale-110"
+        style={{ width: "120px", height: "120px" }}
         onClick={onToggle}
       >
-        {/* Header */}
+        {/* Outer circle border */}
         <div
-          className="px-4 py-2 rounded-t-md flex items-center justify-between"
-          style={{ backgroundColor: `${color}15` }}
-        >
-          <div className="flex items-center gap-2 flex-1">
-            {icon && <div className="text-gray-700">{icon}</div>}
-            <span className="font-semibold text-sm tracking-tight text-gray-800">
-              {label}
-            </span>
+          className="absolute inset-0 rounded-full border-4 transition-all"
+          style={{
+            borderColor: color,
+            backgroundColor: isExpanded ? `${color}15` : "white",
+            boxShadow: isExpanded
+              ? `0 8px 24px ${color}40, 0 0 0 4px ${color}20`
+              : `0 4px 12px ${color}30`,
+          }}
+        />
+
+        {/* Content */}
+        <div className="relative z-10 flex flex-col items-center justify-center text-center px-3">
+          {icon && (
+            <div className="mb-1" style={{ color }}>
+              {icon}
+            </div>
+          )}
+          <div className="text-sm font-semibold tracking-tight" style={{ color }}>
+            {label}
           </div>
-          <div className="flex items-center gap-2">
-            <span
-              className="text-xs font-mono px-2 py-0.5 rounded-full font-semibold"
-              style={{ backgroundColor: color, color: "white" }}
-            >
-              {count}
-            </span>
-            {isExpanded ? (
-              <ChevronDown className="w-4 h-4 text-gray-600" />
-            ) : (
-              <ChevronRight className="w-4 h-4 text-gray-600" />
-            )}
+          <div
+            className="mt-1 text-xs font-mono px-2 py-0.5 rounded-full font-bold"
+            style={{ backgroundColor: color, color: "white" }}
+          >
+            {count}
           </div>
         </div>
 
-        {/* Body - shows when collapsed */}
-        {!isExpanded && (
-          <div className="px-4 py-3 text-xs text-gray-500 font-mono border-t">
-            Click to expand and view {count} items
-          </div>
-        )}
-
-        {/* Expanded preview */}
-        {isExpanded && (
-          <div className="px-4 py-2 border-t">
-            <div className="text-xs text-gray-500 font-mono">
-              Showing subcategories and files...
-            </div>
-          </div>
-        )}
+        {/* Expand/collapse indicator */}
+        <div
+          className="absolute bottom-1 right-1 rounded-full p-1"
+          style={{ backgroundColor: `${color}20` }}
+        >
+          {isExpanded ? (
+            <ChevronDown className="w-3 h-3" style={{ color }} />
+          ) : (
+            <ChevronRight className="w-3 h-3" style={{ color }} />
+          )}
+        </div>
       </div>
 
-      <Handle type="source" position={Position.Bottom} className="!bg-gray-400 !w-2 !h-2" />
+      <Handle type="source" position={Position.Bottom} className="!bg-gray-400 !w-2 !h-2 !opacity-0" />
     </div>
   );
 });
