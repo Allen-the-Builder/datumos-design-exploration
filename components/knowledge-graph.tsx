@@ -36,6 +36,7 @@ interface FileData {
   fileName: string;
   fileExtension: string;
   platform: string;
+  relevanceScore?: number; // 0-100% search relevance
 }
 
 const categoryDefinitions: CategoryData[] = [
@@ -113,23 +114,77 @@ const FILE_NODE_WIDTH = 200;
 const FILE_NODE_HEIGHT = 120;
 const HORIZONTAL_SPACING = 280; // Space between category nodes horizontally
 const VERTICAL_SPACING_CATEGORIES = 250; // Space between search and categories
-const VERTICAL_SPACING_FILES = 200; // Space between categories and files
-const FILE_VERTICAL_SPACING = 150; // Space between file rows
-const FILE_HORIZONTAL_SPACING = 250; // Space between file columns
+const VERTICAL_SPACING_FILES = 180; // Space between categories and first file
+const FILE_VERTICAL_SPACING = 140; // Space between files in vertical stack
+
+// Calculate search relevance score for a file (0-100)
+const calculateRelevanceScore = (fileName: string, query: string): number => {
+  if (!query || query.length === 0) return 0;
+
+  const nameLower = fileName.toLowerCase();
+  const queryLower = query.toLowerCase();
+
+  // Exact match = 100%
+  if (nameLower === queryLower) return 100;
+
+  // Starts with query = 90%
+  if (nameLower.startsWith(queryLower)) return 90;
+
+  // Contains query as whole word = 80%
+  const words = nameLower.split(/[\s_-]+/);
+  if (words.some(word => word === queryLower)) return 80;
+
+  // Contains query anywhere = 60-70% based on position
+  const index = nameLower.indexOf(queryLower);
+  if (index !== -1) {
+    const positionScore = Math.max(60, 70 - (index / nameLower.length) * 10);
+    return Math.round(positionScore);
+  }
+
+  // Partial word matches = 40-50%
+  if (words.some(word => word.includes(queryLower))) return 50;
+
+  // Fuzzy match based on character overlap = 20-30%
+  const matchedChars = queryLower.split('').filter(char => nameLower.includes(char)).length;
+  const fuzzyScore = (matchedChars / queryLower.length) * 30;
+
+  return Math.round(fuzzyScore);
+};
 
 const generateGraphData = (query: string, expandedCategories: Set<string>) => {
   const queryLower = query.toLowerCase();
+  const hasQuery = query.length > 0;
 
-  // Filter categories based on search query
-  const relevantCategories = categoryDefinitions.filter(
-    (cat) => cat.label.toLowerCase().includes(queryLower) || query.length > 2
-  );
+  // Calculate relevance scores for all files and filter categories with matches
+  const categoriesWithScores = categoryDefinitions.map(cat => {
+    const filesWithScores = cat.files.map(file => ({
+      ...file,
+      relevanceScore: calculateRelevanceScore(file.fileName, query)
+    })).filter(file => !hasQuery || file.relevanceScore > 0) // Only show files with relevance if there's a query
+      .sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0)); // Sort by relevance
+
+    return {
+      ...cat,
+      files: filesWithScores,
+      hasMatches: filesWithScores.length > 0
+    };
+  }).filter(cat => cat.hasMatches); // Only show categories with matching files
+
+  // Auto-expand categories with matches (unless manually collapsed)
+  const autoExpandedCategories = new Set(expandedCategories);
+  if (hasQuery) {
+    categoriesWithScores.forEach(cat => {
+      if (cat.hasMatches && !expandedCategories.has(`collapsed-${cat.id}`)) {
+        autoExpandedCategories.add(cat.id);
+      }
+    });
+  }
 
   const nodes: Node[] = [];
   const edges: Edge[] = [];
 
   // Calculate total width needed for categories
-  const totalCategoriesWidth = relevantCategories.length * HORIZONTAL_SPACING;
+  const totalCategoriesWidth = categoriesWithScores.length * HORIZONTAL_SPACING;
   const startX = -totalCategoriesWidth / 2;
 
   // Search node (root) - centered at top
@@ -154,8 +209,8 @@ const generateGraphData = (query: string, expandedCategories: Set<string>) => {
   });
 
   // Add category nodes in a horizontal row
-  relevantCategories.forEach((cat, idx) => {
-    const isExpanded = expandedCategories.has(cat.id);
+  categoriesWithScores.forEach((cat, idx) => {
+    const isExpanded = autoExpandedCategories.has(cat.id);
     const categoryX = startX + idx * HORIZONTAL_SPACING;
     const categoryY = searchY + VERTICAL_SPACING_CATEGORIES;
 
@@ -189,20 +244,11 @@ const generateGraphData = (query: string, expandedCategories: Set<string>) => {
 
     // Add file nodes if category is expanded
     if (isExpanded) {
-      const filesCount = cat.files.length;
-      const filesPerRow = 2; // 2 files per row
-      const rows = Math.ceil(filesCount / filesPerRow);
-
-      // Calculate file grid dimensions
-      const fileGridWidth = filesPerRow * FILE_HORIZONTAL_SPACING;
-      const fileGridStartX = categoryX + CATEGORY_NODE_WIDTH / 2 - fileGridWidth / 2;
+      // Vertical directory tree layout - files stacked vertically
+      const fileX = categoryX + CATEGORY_NODE_WIDTH / 2 - FILE_NODE_WIDTH / 2;
 
       cat.files.forEach((file, fileIdx) => {
-        const row = Math.floor(fileIdx / filesPerRow);
-        const col = fileIdx % filesPerRow;
-
-        const fileX = fileGridStartX + col * FILE_HORIZONTAL_SPACING;
-        const fileY = categoryY + VERTICAL_SPACING_FILES + row * FILE_VERTICAL_SPACING;
+        const fileY = categoryY + VERTICAL_SPACING_FILES + fileIdx * FILE_VERTICAL_SPACING;
 
         nodes.push({
           id: file.id,
@@ -214,6 +260,7 @@ const generateGraphData = (query: string, expandedCategories: Set<string>) => {
             type: file.fileExtension.toUpperCase(),
             platform: file.platform,
             color: cat.color,
+            relevanceScore: file.relevanceScore,
           },
           position: { x: fileX, y: fileY },
         });
@@ -240,16 +287,41 @@ const generateGraphData = (query: string, expandedCategories: Set<string>) => {
 
 function KnowledgeGraphInner({ searchQuery }: KnowledgeGraphProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [previousQuery, setPreviousQuery] = useState(searchQuery);
   const { fitView } = useReactFlow();
+
+  // Reset collapsed states when search query changes
+  useEffect(() => {
+    if (searchQuery !== previousQuery) {
+      setPreviousQuery(searchQuery);
+      // Clear manually collapsed markers when query changes
+      setExpandedCategories(prev => {
+        const next = new Set<string>();
+        prev.forEach(item => {
+          if (!item.startsWith('collapsed-')) {
+            next.add(item);
+          }
+        });
+        return next;
+      });
+    }
+  }, [searchQuery, previousQuery]);
 
   const toggleCategory = useCallback((categoryId: string) => {
     setExpandedCategories((prev) => {
-      // If this category is already expanded, collapse it
+      const next = new Set(prev);
+
+      // If this category is expanded, mark it as manually collapsed
       if (prev.has(categoryId)) {
-        return new Set();
+        next.delete(categoryId);
+        next.add(`collapsed-${categoryId}`);
+      } else {
+        // Remove collapsed marker and expand
+        next.delete(`collapsed-${categoryId}`);
+        next.add(categoryId);
       }
-      // Otherwise, collapse all others and expand only this one
-      return new Set([categoryId]);
+
+      return next;
     });
   }, []);
 

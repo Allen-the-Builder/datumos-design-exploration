@@ -11,10 +11,11 @@ export interface FileNodeData {
   type: string;
   platform: string;
   color?: string;
+  relevanceScore?: number;
 }
 
 export const FileNode = memo(({ data }: NodeProps<FileNodeData>) => {
-  const { fileName, fileExtension, platform, color = "#64748b" } = data;
+  const { fileName, fileExtension, platform, color = "#64748b", relevanceScore } = data;
 
   return (
     <div className="relative">
@@ -37,7 +38,7 @@ export const FileNode = memo(({ data }: NodeProps<FileNodeData>) => {
           </div>
         </div>
 
-        {/* Footer with platform badge */}
+        {/* Footer with platform badge and relevance score */}
         <div
           className="px-3 py-2 border-t flex items-center justify-between"
           style={{ borderColor: `${color}30`, backgroundColor: `${color}08` }}
@@ -48,7 +49,17 @@ export const FileNode = memo(({ data }: NodeProps<FileNodeData>) => {
           >
             {platform}
           </span>
-          <span className="text-xs text-gray-400">2d ago</span>
+          {relevanceScore !== undefined && relevanceScore > 0 && (
+            <span
+              className="text-xs font-mono font-bold px-2 py-0.5 rounded"
+              style={{
+                backgroundColor: relevanceScore >= 80 ? '#10b981' : relevanceScore >= 50 ? '#f59e0b' : '#64748b',
+                color: 'white'
+              }}
+            >
+              {relevanceScore}%
+            </span>
+          )}
         </div>
       </div>
 
