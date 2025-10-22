@@ -57,6 +57,9 @@ export const FileNode = memo(({ data }: NodeProps<FileNodeData>) => {
   return (
     <div
       className="relative"
+      style={{
+        zIndex: isHovered ? 999999 : undefined,
+      }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
