@@ -3,16 +3,34 @@
 import { InfiniteCanvas } from "@/components/infinite-canvas";
 import { SearchBar } from "@/components/search-bar";
 import { KnowledgeGraph } from "@/components/knowledge-graph";
-import { SearchResults } from "@/components/search-results";
-import { useState } from "react";
+import { LivingKnowledgeGraph } from "@/components/living-knowledge-graph";
+// import { SearchResults } from "@/components/search-results"; // Hidden in Scheme 2
+import { useState, useEffect } from "react";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchActive, setIsSearchActive] = useState(false);
+  const [showLivingGraph, setShowLivingGraph] = useState(true);
+  const [isLivingGraphExiting, setIsLivingGraphExiting] = useState(false);
 
   const handleSearchChange = (query: string) => {
     setSearchQuery(query);
-    setIsSearchActive(query.length > 0);
+    const isActive = query.length > 0;
+
+    if (isActive && !isSearchActive) {
+      // User just started typing - trigger exit animation
+      setIsLivingGraphExiting(true);
+      // Remove living graph after animation completes
+      setTimeout(() => {
+        setShowLivingGraph(false);
+        setIsSearchActive(true);
+      }, 1000);
+    } else if (!isActive && isSearchActive) {
+      // User cleared search - bring back living graph
+      setIsSearchActive(false);
+      setShowLivingGraph(true);
+      setIsLivingGraphExiting(false);
+    }
   };
 
   return (
@@ -29,17 +47,29 @@ export default function Home() {
         />
       </div>
 
-      {/* Knowledge Graph Visualization */}
+      {/* Living Knowledge Graph - Shows when no search */}
+      {showLivingGraph && (
+        <div className="absolute inset-0">
+          <LivingKnowledgeGraph isExiting={isLivingGraphExiting} />
+        </div>
+      )}
+
+      {/* Knowledge Graph Visualization - Shows during search */}
       {isSearchActive && (
-        <div className="absolute inset-0 pointer-events-none">
+        <div
+          className="absolute inset-0 pointer-events-none transition-opacity duration-700 ease-in"
+          style={{
+            opacity: isSearchActive ? 1 : 0,
+          }}
+        >
           <KnowledgeGraph searchQuery={searchQuery} />
         </div>
       )}
 
-      {/* Search Results */}
-      {isSearchActive && (
+      {/* Search Results - Hidden in Scheme 2 */}
+      {/* {isSearchActive && (
         <SearchResults searchQuery={searchQuery} />
-      )}
+      )} */}
     </main>
   );
 }

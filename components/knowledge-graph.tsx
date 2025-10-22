@@ -244,13 +244,12 @@ function KnowledgeGraphInner({ searchQuery }: KnowledgeGraphProps) {
 
   const toggleCategory = useCallback((categoryId: string) => {
     setExpandedCategories((prev) => {
-      const next = new Set(prev);
-      if (next.has(categoryId)) {
-        next.delete(categoryId);
-      } else {
-        next.add(categoryId);
+      // If this category is already expanded, collapse it
+      if (prev.has(categoryId)) {
+        return new Set();
       }
-      return next;
+      // Otherwise, collapse all others and expand only this one
+      return new Set([categoryId]);
     });
   }, []);
 
