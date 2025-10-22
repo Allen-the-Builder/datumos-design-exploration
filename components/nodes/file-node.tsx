@@ -23,27 +23,36 @@ export const FileNode = memo(({ data }: NodeProps<FileNodeData>) => {
 
   // Streaming text effect
   useEffect(() => {
-    if (isHovered && summary && !isStreaming) {
-      setIsStreaming(true);
+    if (isHovered && summary) {
+      // Reset and start streaming
       setDisplayedText("");
+      setIsStreaming(true);
 
-      let currentIndex = 0;
-      const streamInterval = setInterval(() => {
-        if (currentIndex < summary.length) {
-          setDisplayedText(summary.substring(0, currentIndex + 1));
-          currentIndex++;
-        } else {
-          clearInterval(streamInterval);
-          setIsStreaming(false);
-        }
-      }, 15); // 15ms per character for smooth streaming
+      let streamInterval: NodeJS.Timeout | null = null;
 
-      return () => clearInterval(streamInterval);
+      // Small delay to let tooltip fade in first
+      const startDelay = setTimeout(() => {
+        let currentIndex = 0;
+        streamInterval = setInterval(() => {
+          if (currentIndex < summary.length) {
+            currentIndex++;
+            setDisplayedText(summary.substring(0, currentIndex));
+          } else {
+            if (streamInterval) clearInterval(streamInterval);
+            setIsStreaming(false);
+          }
+        }, 15); // 15ms per character for smooth streaming
+      }, 200); // Wait for tooltip animation to complete
+
+      return () => {
+        clearTimeout(startDelay);
+        if (streamInterval) clearInterval(streamInterval);
+      };
     } else if (!isHovered) {
       setDisplayedText("");
       setIsStreaming(false);
     }
-  }, [isHovered, summary, isStreaming]);
+  }, [isHovered, summary]);
 
   return (
     <div
@@ -98,7 +107,7 @@ export const FileNode = memo(({ data }: NodeProps<FileNodeData>) => {
       {/* AI Summary Tooltip */}
       {isHovered && summary && (
         <div
-          className="absolute left-full ml-4 top-0 bg-gradient-to-br from-gray-900 to-gray-800 text-white rounded-xl shadow-2xl p-4 w-80 z-50 border border-gray-700"
+          className="absolute left-full ml-4 top-0 bg-gradient-to-br from-gray-900 to-gray-800 text-white rounded-xl shadow-2xl p-4 w-80 z-[9999] border border-gray-700"
           style={{
             animation: "fadeInSlide 200ms ease-out",
           }}
@@ -114,7 +123,7 @@ export const FileNode = memo(({ data }: NodeProps<FileNodeData>) => {
           </div>
 
           {/* Streaming Text */}
-          <div className="text-sm leading-relaxed text-gray-200">
+          <div className="text-sm leading-relaxed text-gray-200 font-mono">
             {displayedText}
             {isStreaming && <span className="inline-block w-1 h-4 ml-0.5 bg-blue-400 animate-pulse" />}
           </div>
