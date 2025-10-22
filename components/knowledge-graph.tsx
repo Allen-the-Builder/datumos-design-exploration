@@ -112,7 +112,7 @@ const CATEGORY_NODE_WIDTH = 120;
 const CATEGORY_NODE_HEIGHT = 120;
 const FILE_NODE_WIDTH = 200;
 const FILE_NODE_HEIGHT = 120;
-const HORIZONTAL_SPACING = 280; // Space between category nodes horizontally
+const HORIZONTAL_SPACING = 350; // Space between category nodes horizontally (increased to prevent overlap)
 const VERTICAL_SPACING_CATEGORIES = 250; // Space between search and categories
 const VERTICAL_SPACING_FILES = 180; // Space between categories and first file
 const FILE_VERTICAL_SPACING = 140; // Space between files in vertical stack
@@ -355,9 +355,9 @@ function KnowledgeGraphInner({ searchQuery }: KnowledgeGraphProps) {
     // Trigger fitView after nodes are updated to auto-adjust view
     setTimeout(() => {
       fitView({
-        padding: 0.2,
+        padding: 0.15,
         duration: 400,
-        maxZoom: 1,
+        maxZoom: 0.9,
         minZoom: 0.1
       });
     }, 50);
@@ -372,7 +372,7 @@ function KnowledgeGraphInner({ searchQuery }: KnowledgeGraphProps) {
         onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
         fitView
-        fitViewOptions={{ padding: 0.2, maxZoom: 1, minZoom: 0.1 }}
+        fitViewOptions={{ padding: 0.15, maxZoom: 0.9, minZoom: 0.1 }}
         minZoom={0.1}
         maxZoom={2}
         className="bg-transparent"
