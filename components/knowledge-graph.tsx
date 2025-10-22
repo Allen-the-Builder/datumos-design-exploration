@@ -10,6 +10,8 @@ import ReactFlow, {
   useEdgesState,
   MarkerType,
   NodeTypes,
+  useReactFlow,
+  ReactFlowProvider,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { AggregationNode } from "./nodes/aggregation-node";
@@ -103,26 +105,17 @@ const nodeTypes: NodeTypes = {
   file: FileNode,
 };
 
-// Circular layout helper function
-const calculateCircularLayout = (
-  centerX: number,
-  centerY: number,
-  radius: number,
-  itemCount: number,
-  startAngle: number = 0
-) => {
-  const positions: { x: number; y: number }[] = [];
-  const angleStep = (2 * Math.PI) / itemCount;
-
-  for (let i = 0; i < itemCount; i++) {
-    const angle = startAngle + i * angleStep;
-    const x = centerX + radius * Math.cos(angle);
-    const y = centerY + radius * Math.sin(angle);
-    positions.push({ x, y });
-  }
-
-  return positions;
-};
+// Layout constants
+const SEARCH_NODE_WIDTH = 120;
+const CATEGORY_NODE_WIDTH = 120;
+const CATEGORY_NODE_HEIGHT = 120;
+const FILE_NODE_WIDTH = 200;
+const FILE_NODE_HEIGHT = 120;
+const HORIZONTAL_SPACING = 280; // Space between category nodes horizontally
+const VERTICAL_SPACING_CATEGORIES = 250; // Space between search and categories
+const VERTICAL_SPACING_FILES = 200; // Space between categories and files
+const FILE_VERTICAL_SPACING = 150; // Space between file rows
+const FILE_HORIZONTAL_SPACING = 250; // Space between file columns
 
 const generateGraphData = (query: string, expandedCategories: Set<string>) => {
   const queryLower = query.toLowerCase();
@@ -135,16 +128,19 @@ const generateGraphData = (query: string, expandedCategories: Set<string>) => {
   const nodes: Node[] = [];
   const edges: Edge[] = [];
 
-  // Center position for the search node
-  const centerX = 600;
-  const centerY = 400;
+  // Calculate total width needed for categories
+  const totalCategoriesWidth = relevantCategories.length * HORIZONTAL_SPACING;
+  const startX = -totalCategoriesWidth / 2;
 
-  // Search node (root) - centered
+  // Search node (root) - centered at top
+  const searchX = 0;
+  const searchY = 0;
+
   nodes.push({
     id: "search",
     type: "input",
     data: { label: query || "Search Query" },
-    position: { x: centerX - 60, y: centerY - 200 },
+    position: { x: searchX - SEARCH_NODE_WIDTH / 2, y: searchY },
     style: {
       background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
       color: "white",
@@ -157,20 +153,11 @@ const generateGraphData = (query: string, expandedCategories: Set<string>) => {
     },
   });
 
-  // Calculate positions for category nodes in a circle around the search node
-  const categoryRadius = 350;
-  const categoryPositions = calculateCircularLayout(
-    centerX,
-    centerY,
-    categoryRadius,
-    relevantCategories.length,
-    -Math.PI / 2 // Start at top
-  );
-
-  // Add category nodes and their children
+  // Add category nodes in a horizontal row
   relevantCategories.forEach((cat, idx) => {
     const isExpanded = expandedCategories.has(cat.id);
-    const categoryPos = categoryPositions[idx];
+    const categoryX = startX + idx * HORIZONTAL_SPACING;
+    const categoryY = searchY + VERTICAL_SPACING_CATEGORIES;
 
     // Add aggregation node
     nodes.push({
@@ -184,7 +171,7 @@ const generateGraphData = (query: string, expandedCategories: Set<string>) => {
         color: cat.color,
         icon: cat.icon,
       },
-      position: { x: categoryPos.x - 60, y: categoryPos.y - 60 },
+      position: { x: categoryX, y: categoryY },
     });
 
     // Add edge from search to category
@@ -202,18 +189,20 @@ const generateGraphData = (query: string, expandedCategories: Set<string>) => {
 
     // Add file nodes if category is expanded
     if (isExpanded) {
-      // Calculate positions for file nodes in a circle around the category node
-      const fileRadius = 280;
-      const filePositions = calculateCircularLayout(
-        categoryPos.x,
-        categoryPos.y,
-        fileRadius,
-        cat.files.length,
-        (idx * 2 * Math.PI) / relevantCategories.length // Offset each category's files
-      );
+      const filesCount = cat.files.length;
+      const filesPerRow = 2; // 2 files per row
+      const rows = Math.ceil(filesCount / filesPerRow);
+
+      // Calculate file grid dimensions
+      const fileGridWidth = filesPerRow * FILE_HORIZONTAL_SPACING;
+      const fileGridStartX = categoryX + CATEGORY_NODE_WIDTH / 2 - fileGridWidth / 2;
 
       cat.files.forEach((file, fileIdx) => {
-        const filePos = filePositions[fileIdx];
+        const row = Math.floor(fileIdx / filesPerRow);
+        const col = fileIdx % filesPerRow;
+
+        const fileX = fileGridStartX + col * FILE_HORIZONTAL_SPACING;
+        const fileY = categoryY + VERTICAL_SPACING_FILES + row * FILE_VERTICAL_SPACING;
 
         nodes.push({
           id: file.id,
@@ -226,7 +215,7 @@ const generateGraphData = (query: string, expandedCategories: Set<string>) => {
             platform: file.platform,
             color: cat.color,
           },
-          position: { x: filePos.x - 100, y: filePos.y - 50 },
+          position: { x: fileX, y: fileY },
         });
 
         // Add edge from category to file
@@ -249,8 +238,9 @@ const generateGraphData = (query: string, expandedCategories: Set<string>) => {
   return { nodes, edges };
 };
 
-export function KnowledgeGraph({ searchQuery }: KnowledgeGraphProps) {
+function KnowledgeGraphInner({ searchQuery }: KnowledgeGraphProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const { fitView } = useReactFlow();
 
   const toggleCategory = useCallback((categoryId: string) => {
     setExpandedCategories((prev) => {
@@ -290,7 +280,17 @@ export function KnowledgeGraph({ searchQuery }: KnowledgeGraphProps) {
   useEffect(() => {
     setNodes(graphData.nodes);
     setEdges(graphData.edges);
-  }, [graphData, setNodes, setEdges]);
+
+    // Trigger fitView after nodes are updated to auto-adjust view
+    setTimeout(() => {
+      fitView({
+        padding: 0.2,
+        duration: 400,
+        maxZoom: 1,
+        minZoom: 0.1
+      });
+    }, 50);
+  }, [graphData, setNodes, setEdges, fitView]);
 
   return (
     <div className="w-full h-full pointer-events-auto">
@@ -301,9 +301,9 @@ export function KnowledgeGraph({ searchQuery }: KnowledgeGraphProps) {
         onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
         fitView
-        fitViewOptions={{ padding: 0.15, maxZoom: 0.8, minZoom: 0.3 }}
+        fitViewOptions={{ padding: 0.2, maxZoom: 1, minZoom: 0.1 }}
         minZoom={0.1}
-        maxZoom={1.5}
+        maxZoom={2}
         className="bg-transparent"
         proOptions={{ hideAttribution: true }}
         nodesDraggable={true}
@@ -317,5 +317,13 @@ export function KnowledgeGraph({ searchQuery }: KnowledgeGraphProps) {
         />
       </ReactFlow>
     </div>
+  );
+}
+
+export function KnowledgeGraph(props: KnowledgeGraphProps) {
+  return (
+    <ReactFlowProvider>
+      <KnowledgeGraphInner {...props} />
+    </ReactFlowProvider>
   );
 }
