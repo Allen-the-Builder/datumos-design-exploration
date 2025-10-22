@@ -37,6 +37,7 @@ interface FileData {
   fileExtension: string;
   platform: string;
   relevanceScore?: number; // 0-100% search relevance
+  summary?: string; // AI-generated summary
 }
 
 const categoryDefinitions: CategoryData[] = [
@@ -46,10 +47,34 @@ const categoryDefinitions: CategoryData[] = [
     color: "#3b82f6",
     icon: <Folder className="w-5 h-5" />,
     files: [
-      { id: "proj-1", fileName: "Downtown_Tower_Construction", fileExtension: "mpp", platform: "ACC" },
-      { id: "proj-2", fileName: "Harbor_Bridge_Renovation", fileExtension: "mpp", platform: "ACC" },
-      { id: "proj-3", fileName: "Medical_Center_Expansion", fileExtension: "mpp", platform: "ACC" },
-      { id: "proj-4", fileName: "Transit_Hub_Development", fileExtension: "mpp", platform: "ACC" },
+      {
+        id: "proj-1",
+        fileName: "Downtown_Tower_Construction",
+        fileExtension: "mpp",
+        platform: "ACC",
+        summary: "42-story mixed-use tower project currently in foundation phase. Schedule shows 18-month timeline with steel erection beginning Q2 2025."
+      },
+      {
+        id: "proj-2",
+        fileName: "Harbor_Bridge_Renovation",
+        fileExtension: "mpp",
+        platform: "ACC",
+        summary: "Historic bridge restoration involving structural reinforcement and seismic retrofitting. Critical path includes night work during low traffic periods."
+      },
+      {
+        id: "proj-3",
+        fileName: "Medical_Center_Expansion",
+        fileExtension: "mpp",
+        platform: "ACC",
+        summary: "Three-phase hospital expansion adding 200 beds and surgical facilities. Coordination with active medical operations requires detailed sequencing."
+      },
+      {
+        id: "proj-4",
+        fileName: "Transit_Hub_Development",
+        fileExtension: "mpp",
+        platform: "ACC",
+        summary: "Multi-modal transportation facility integrating bus, rail, and pedestrian infrastructure. Fast-tracked delivery using design-build methodology."
+      },
     ],
   },
   {
@@ -58,11 +83,41 @@ const categoryDefinitions: CategoryData[] = [
     color: "#8b5cf6",
     icon: <FileText className="w-5 h-5" />,
     files: [
-      { id: "doc-1", fileName: "Project_Specifications_v3.2", fileExtension: "docx", platform: "M365" },
-      { id: "doc-2", fileName: "Safety_Compliance_Report", fileExtension: "pdf", platform: "M365" },
-      { id: "doc-3", fileName: "Meeting_Notes_Week_12", fileExtension: "docx", platform: "M365" },
-      { id: "doc-4", fileName: "Budget_Analysis_Q4", fileExtension: "xlsx", platform: "ACC" },
-      { id: "doc-5", fileName: "Contract_Amendment_2024", fileExtension: "pdf", platform: "M365" },
+      {
+        id: "doc-1",
+        fileName: "Project_Specifications_v3.2",
+        fileExtension: "docx",
+        platform: "M365",
+        summary: "Updated technical specifications including revised concrete mix designs and waterproofing requirements. Incorporates feedback from structural engineer review."
+      },
+      {
+        id: "doc-2",
+        fileName: "Safety_Compliance_Report",
+        fileExtension: "pdf",
+        platform: "M365",
+        summary: "Monthly OSHA compliance audit showing zero recordable incidents. Highlights improved fall protection procedures and crane operator certification updates."
+      },
+      {
+        id: "doc-3",
+        fileName: "Meeting_Notes_Week_12",
+        fileExtension: "docx",
+        platform: "M365",
+        summary: "OAC meeting covering MEP coordination conflicts and schedule acceleration strategies. Action items assigned to subcontractor leads with two-week deadline."
+      },
+      {
+        id: "doc-4",
+        fileName: "Budget_Analysis_Q4",
+        fileExtension: "xlsx",
+        platform: "ACC",
+        summary: "Financial tracking report showing 3% cost savings in structural steel procurement. Forecasts minor overrun in sitework due to unexpected soil conditions."
+      },
+      {
+        id: "doc-5",
+        fileName: "Contract_Amendment_2024",
+        fileExtension: "pdf",
+        platform: "M365",
+        summary: "Change order package covering scope additions and extended project duration. Includes approved value engineering proposals and updated payment schedule."
+      },
     ],
   },
   {
@@ -71,9 +126,27 @@ const categoryDefinitions: CategoryData[] = [
     color: "#ec4899",
     icon: <Layers className="w-5 h-5" />,
     files: [
-      { id: "draw-1", fileName: "A-101_Site_Plan", fileExtension: "dwg", platform: "Bluebeam" },
-      { id: "draw-2", fileName: "S-201_Structural_Detail", fileExtension: "dwg", platform: "ACC" },
-      { id: "draw-3", fileName: "M-301_HVAC_Layout", fileExtension: "dwg", platform: "Bluebeam" },
+      {
+        id: "draw-1",
+        fileName: "A-101_Site_Plan",
+        fileExtension: "dwg",
+        platform: "Bluebeam",
+        summary: "Overall site layout showing building footprint, parking areas, and utility connections. Latest revision incorporates fire department access requirements and landscape buffer zones."
+      },
+      {
+        id: "draw-2",
+        fileName: "S-201_Structural_Detail",
+        fileExtension: "dwg",
+        platform: "ACC",
+        summary: "Foundation connection details for seismic zone compliance. Includes post-tensioned slab specifications and column base plate anchor configurations."
+      },
+      {
+        id: "draw-3",
+        fileName: "M-301_HVAC_Layout",
+        fileExtension: "dwg",
+        platform: "Bluebeam",
+        summary: "Mechanical system routing for floors 3-8 showing ductwork, equipment locations, and coordination with structural beams. Reflects recent value engineering changes."
+      },
     ],
   },
   {
@@ -82,9 +155,27 @@ const categoryDefinitions: CategoryData[] = [
     color: "#f59e0b",
     icon: <AlertCircle className="w-5 h-5" />,
     files: [
-      { id: "rfi-1", fileName: "RFI-024_Foundation_Clarification", fileExtension: "pdf", platform: "Bluebeam" },
-      { id: "rfi-2", fileName: "RFI-031_Material_Substitution", fileExtension: "pdf", platform: "ACC" },
-      { id: "rfi-3", fileName: "RFI-045_Schedule_Conflict", fileExtension: "pdf", platform: "Bluebeam" },
+      {
+        id: "rfi-1",
+        fileName: "RFI-024_Foundation_Clarification",
+        fileExtension: "pdf",
+        platform: "Bluebeam",
+        summary: "Request for clarification on pile cap reinforcement spacing due to conflicting details between structural drawings. Response received approving alternate bar configuration."
+      },
+      {
+        id: "rfi-2",
+        fileName: "RFI-031_Material_Substitution",
+        fileExtension: "pdf",
+        platform: "ACC",
+        summary: "Proposal to substitute specified curtain wall system with alternative manufacturer due to delivery delays. Architect approved with modifications to glazing specifications."
+      },
+      {
+        id: "rfi-3",
+        fileName: "RFI-045_Schedule_Conflict",
+        fileExtension: "pdf",
+        platform: "Bluebeam",
+        summary: "Coordination issue between electrical rough-in and drywall installation sequences. Resolution requires two-week schedule adjustment to avoid rework."
+      },
     ],
   },
   {
@@ -93,9 +184,27 @@ const categoryDefinitions: CategoryData[] = [
     color: "#10b981",
     icon: <Users className="w-5 h-5" />,
     files: [
-      { id: "team-1", fileName: "Structural_Engineering_Team", fileExtension: "csv", platform: "ACC" },
-      { id: "team-2", fileName: "MEP_Coordination_Group", fileExtension: "csv", platform: "ACC" },
-      { id: "team-3", fileName: "Site_Management", fileExtension: "csv", platform: "M365" },
+      {
+        id: "team-1",
+        fileName: "Structural_Engineering_Team",
+        fileExtension: "csv",
+        platform: "ACC",
+        summary: "Six licensed engineers specializing in high-rise concrete design and seismic analysis. Lead by principal with 25 years experience in complex urban projects."
+      },
+      {
+        id: "team-2",
+        fileName: "MEP_Coordination_Group",
+        fileExtension: "csv",
+        platform: "ACC",
+        summary: "Cross-functional coordination team managing mechanical, electrical, and plumbing system integration. Conducts weekly BIM clash detection reviews and resolution workshops."
+      },
+      {
+        id: "team-3",
+        fileName: "Site_Management",
+        fileExtension: "csv",
+        platform: "M365",
+        summary: "On-site leadership including project superintendent, safety manager, and quality control inspector. Responsible for daily field operations and subcontractor coordination."
+      },
     ],
   },
 ];
@@ -261,6 +370,7 @@ const generateGraphData = (query: string, expandedCategories: Set<string>) => {
             platform: file.platform,
             color: cat.color,
             relevanceScore: file.relevanceScore,
+            summary: file.summary,
           },
           position: { x: fileX, y: fileY },
         });
