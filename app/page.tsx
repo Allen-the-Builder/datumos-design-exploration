@@ -12,6 +12,7 @@ export default function Home() {
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [showLivingGraph, setShowLivingGraph] = useState(true);
   const [isLivingGraphExiting, setIsLivingGraphExiting] = useState(false);
+  const [isLivingGraphEntering, setIsLivingGraphEntering] = useState(false);
 
   const handleSearchChange = (query: string) => {
     setSearchQuery(query);
@@ -20,16 +21,22 @@ export default function Home() {
     if (isActive && !isSearchActive) {
       // User just started typing - trigger exit animation
       setIsLivingGraphExiting(true);
+      setIsLivingGraphEntering(false);
       // Remove living graph after animation completes
       setTimeout(() => {
         setShowLivingGraph(false);
         setIsSearchActive(true);
       }, 1000);
     } else if (!isActive && isSearchActive) {
-      // User cleared search - bring back living graph
+      // User cleared search - bring back living graph with entrance animation
       setIsSearchActive(false);
       setShowLivingGraph(true);
       setIsLivingGraphExiting(false);
+      setIsLivingGraphEntering(true);
+      // Remove entering state after animation completes
+      setTimeout(() => {
+        setIsLivingGraphEntering(false);
+      }, 1000);
     }
   };
 
@@ -50,7 +57,10 @@ export default function Home() {
       {/* Living Knowledge Graph - Shows when no search */}
       {showLivingGraph && (
         <div className="absolute inset-0">
-          <LivingKnowledgeGraph isExiting={isLivingGraphExiting} />
+          <LivingKnowledgeGraph
+            isExiting={isLivingGraphExiting}
+            isEntering={isLivingGraphEntering}
+          />
         </div>
       )}
 

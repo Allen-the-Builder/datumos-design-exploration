@@ -1,7 +1,7 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SearchBarProps {
@@ -20,7 +20,7 @@ export function SearchBar({ value, onChange, isActive }: SearchBarProps) {
     >
       <div className="relative bg-white rounded-lg shadow-2xl border border-gray-200 p-1">
         <div className="flex items-center gap-3 px-4 py-2">
-          <Search className="w-5 h-5 text-gray-400" />
+          <Search className="w-5 h-5 text-gray-400 flex-shrink-0" />
           <Input
             type="text"
             placeholder="search your AEC knowledge hub"
@@ -28,6 +28,15 @@ export function SearchBar({ value, onChange, isActive }: SearchBarProps) {
             onChange={(e) => onChange(e.target.value)}
             className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-base font-mono tracking-tight placeholder:text-gray-400 shadow-none"
           />
+          {value && (
+            <button
+              onClick={() => onChange("")}
+              className="flex-shrink-0 p-1 rounded-full hover:bg-gray-100 transition-colors"
+              aria-label="Clear search"
+            >
+              <X className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+            </button>
+          )}
         </div>
       </div>
 

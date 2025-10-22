@@ -76,6 +76,7 @@ const platforms: Platform[] = [
 
 interface LivingKnowledgeGraphProps {
   isExiting?: boolean;
+  isEntering?: boolean;
 }
 
 function PlatformCard({ platform, position, index, isExiting }: PlatformCardProps) {
@@ -172,7 +173,7 @@ function PlatformCard({ platform, position, index, isExiting }: PlatformCardProp
   );
 }
 
-export function LivingKnowledgeGraph({ isExiting = false }: LivingKnowledgeGraphProps) {
+export function LivingKnowledgeGraph({ isExiting = false, isEntering = false }: LivingKnowledgeGraphProps) {
   const [rotation, setRotation] = useState(0);
 
   useEffect(() => {
@@ -194,8 +195,9 @@ export function LivingKnowledgeGraph({ isExiting = false }: LivingKnowledgeGraph
     <div
       className="absolute inset-0 flex items-center justify-center pointer-events-none transition-all duration-1000 ease-out"
       style={{
-        transform: isExiting ? 'scale(2.5)' : 'scale(1)',
-        opacity: isExiting ? 0 : 1,
+        transform: isExiting ? 'scale(2.5)' : isEntering ? 'scale(0.5)' : 'scale(1)',
+        opacity: isExiting ? 0 : isEntering ? 0 : 1,
+        animation: isEntering ? 'zoomIn 1000ms ease-out forwards' : undefined,
       }}
     >
       <div className="relative w-[900px] h-[650px]">
@@ -329,7 +331,7 @@ export function LivingKnowledgeGraph({ isExiting = false }: LivingKnowledgeGraph
         </div>
       </div>
 
-      {/* Global pulse animation */}
+      {/* Global animations */}
       <style jsx>{`
         @keyframes pulse {
           0%, 100% {
@@ -339,6 +341,17 @@ export function LivingKnowledgeGraph({ isExiting = false }: LivingKnowledgeGraph
           50% {
             opacity: 0.6;
             transform: scale(1.3);
+          }
+        }
+
+        @keyframes zoomIn {
+          0% {
+            opacity: 0;
+            transform: scale(0.5);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
           }
         }
       `}</style>
