@@ -1,7 +1,6 @@
 "use client";
 
-import { memo, useState, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
+import { memo, useState, useEffect } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { FileIcon, defaultStyles } from "react-file-icon";
 
@@ -21,33 +20,6 @@ export const FileNode = memo(({ data }: NodeProps<FileNodeData>) => {
   const [isHovered, setIsHovered] = useState(false);
   const [displayedText, setDisplayedText] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
-  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  // Update tooltip position when hovering and on scroll/resize
-  useEffect(() => {
-    const updatePosition = () => {
-      if (isHovered && cardRef.current) {
-        const rect = cardRef.current.getBoundingClientRect();
-        setTooltipPosition({
-          x: rect.right + 16, // 16px gap (ml-4)
-          y: rect.top,
-        });
-      }
-    };
-
-    if (isHovered) {
-      updatePosition();
-      // Update position on scroll or resize
-      window.addEventListener('scroll', updatePosition, true);
-      window.addEventListener('resize', updatePosition);
-
-      return () => {
-        window.removeEventListener('scroll', updatePosition, true);
-        window.removeEventListener('resize', updatePosition);
-      };
-    }
-  }, [isHovered]);
 
   // Streaming text effect
   useEffect(() => {
@@ -91,7 +63,6 @@ export const FileNode = memo(({ data }: NodeProps<FileNodeData>) => {
       <Handle type="target" position={Position.Top} className="!bg-gray-400 !w-2 !h-2 !opacity-0" />
 
       <div
-        ref={cardRef}
         className="bg-white rounded-lg shadow-lg border-2 transition-all hover:shadow-xl hover:scale-105 cursor-pointer"
         style={{ borderColor: color, width: "200px" }}
       >
@@ -133,13 +104,12 @@ export const FileNode = memo(({ data }: NodeProps<FileNodeData>) => {
         </div>
       </div>
 
-      {/* AI Summary Tooltip - Rendered in portal to always be on top */}
-      {isHovered && summary && typeof document !== 'undefined' && createPortal(
+      {/* AI Summary Tooltip */}
+      {isHovered && summary && (
         <div
-          className="fixed bg-gradient-to-br from-gray-900 to-gray-800 text-white rounded-xl shadow-2xl p-4 w-80 z-[9999] border border-gray-700 pointer-events-none"
+          className="absolute left-full ml-4 top-0 bg-gradient-to-br from-gray-900 to-gray-800 text-white rounded-xl shadow-2xl p-4 w-80 border border-gray-700"
           style={{
-            left: `${tooltipPosition.x}px`,
-            top: `${tooltipPosition.y}px`,
+            zIndex: 999999,
             animation: "fadeInSlide 200ms ease-out",
           }}
         >
@@ -158,8 +128,7 @@ export const FileNode = memo(({ data }: NodeProps<FileNodeData>) => {
             {displayedText}
             {isStreaming && <span className="inline-block w-1 h-4 ml-0.5 bg-blue-400 animate-pulse" />}
           </div>
-        </div>,
-        document.body
+        </div>
       )}
 
       <Handle type="source" position={Position.Bottom} className="!bg-gray-400 !w-2 !h-2 !opacity-0" />
